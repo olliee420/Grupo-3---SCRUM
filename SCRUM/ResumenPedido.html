@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personalizar y Resumen de Pedido</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f7f9fa;
+            padding: 20px;
+            margin: 0;
+            color: #333;
+        }
+
+        .contenedor-principal {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* Pantallas medianas y grandes (Computadoras/Tablets) */
+        @media (min-width: 768px) {
+            .contenedor-principal {
+                grid-template-columns: 1.2fr 0.8fr;
+            }
+        }
+
+        /* Tarjetas de Interfaz */
+        .tarjeta {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        h3 {
+            margin-top: 0;
+            color: #4a2c11;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+
+        /* Sección de Opciones de Personalización */
+        .grupo-opcion {
+            margin-bottom: 20px;
+        }
+
+        .grupo-opcion p {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .opcion-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #fafafa;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            border: 1px solid #eee;
+            transition: background 0.2s;
+        }
+
+        .opcion-label:hover {
+            background: #f0eae4;
+        }
+
+        /* Resumen del Pedido */
+        .linea-resumen {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .personalizacion-item {
+            color: #666;
+            font-size: 0.85rem;
+            padding-left: 15px;
+            font-style: italic;
+        }
+
+        .total-pedido {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 1.25rem;
+            border-top: 2px dashed #eee;
+            margin-top: 15px;
+            padding-top: 15px;
+            color: #27ae60;
+        }
+
+        .btn-confirmar {
+            background-color: #4a2c11;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        .btn-confirmar:hover {
+            background-color: #361f0b;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="contenedor-principal">
+
+        <!-- 1. FORMULARIO DE PERSONALIZACIÓN -->
+        <div class="tarjeta">
+            <h3>☕ Personaliza tu Producto</h3>
+            <h2>Capuccino</h2>
+            <p style="color: #666;">Café expreso con leche espumosa.</p>
+
+            <!-- Selección de Tamaño (Radio buttons - Solo uno a la vez) -->
+            <div class="grupo-opcion">
+                <p>Selecciona el Tamaño:</p>
+                <label class="opcion-label">
+                    <input type="radio" name="tamano" value="Mediano" data-precio="0.00" checked
+                        onchange="actualizarResumen()">
+                    Mediano (+$0.00)
+                </label>
+                <label class="opcion-label">
+                    <input type="radio" name="tamano" value="Grande" data-precio="0.75" onchange="actualizarResumen()">
+                    Grande (+$0.75)
+                </label>
+            </div>
+
+            <!-- Selección de Agregados (Checkboxes - Múltiples opciones) -->
+            <div class="grupo-opcion">
+                <p>Agregados Extra:</p>
+                <label class="opcion-label">
+                    <input type="checkbox" name="agregado" value="Leche de Almendras" data-precio="0.50"
+                        onchange="actualizarResumen()">
+                    Leche de Almendras (+$0.50)
+                </label>
+                <label class="opcion-label">
+                    <input type="checkbox" name="agregado" value="Extra Shot de Expreso" data-precio="0.60"
+                        onchange="activeShot = true; actualizarResumen()">
+                    Extra Shot de Expreso (+$0.60)
+                </label>
+            </div>
+        </div>
+
+        <!-- 2. RESUMEN DEL PEDIDO DINÁMICO -->
+        <div class="tarjeta">
+            <h3>📋 Resumen de tu Pedido</h3>
+
+            <!-- Detalle base del producto -->
+            <div class="linea-resumen">
+                <strong>1x Capuccino (Base)</strong>
+                <span>$2.50</span>
+            </div>
+
+            <!-- Aquí JavaScript inyectará las personalizaciones elegidas -->
+            <div id="lista-personalizaciones"></div>
+
+            <!-- Total Final -->
+            <div class="total-pedido">
+                <span>Total:</span>
+                <span id="precio-total">$2.50</span>
+            </div>
+
+            <button class="btn-confirmar" onclick="alert('¡Pedido enviado al backend con éxito!')">
+                Confirmar Pedido
+            </button>
+        </div>
+
+    </div>
+
+    <!-- ==========================================
+       LÓGICA EN JAVASCRIPT
+       ========================================== */ -->
+    <script>
+        // Precio base inicial extraído del producto
+        const PRECIO_BASE = 2.50;
+
+        function actualizarResumen() {
+            const contenedorLista = document.getElementById('lista-personalizaciones');
+            const contenedorTotal = document.getElementById('precio-total');
+
+            // Limpiamos la lista anterior para reescribir desde cero
+            contenedorLista.innerHTML = '';
+            let precioAdicionalAcumulado = 0;
+
+            // 1. Procesar Tamaño Seleccionado
+            const tamanoElegido = document.querySelector('input[name="tamano"]:checked');
+            if (tamanoElegido) {
+                const nombreTamano = tamanoElegido.value;
+                const precioTamano = parseFloat(tamanoElegido.getAttribute('data-precio'));
+
+                precioAdicionalAcumulado += precioTamano;
+
+                // Añadir línea visual si tiene un costo extra o para dejar registro
+                if (precioTamano > 0) {
+                    contenedorLista.innerHTML += `
+            <div class="linea-resumen personalizacion-item">
+              <span>+ Tamaño: ${nombreTamano}</span>
+              <span>+$${precioTamano.toFixed(2)}</span>
+            </div>
+          `;
+                }
+            }
+
+            // 2. Procesar Agregados Seleccionados
+            const agregadosElegidos = document.querySelectorAll('input[name="agregado"]:checked');
+            agregadosElegidos.forEach(checkbox => {
+                const nombreAgregado = checkbox.value;
+                const precioAgregado = parseFloat(checkbox.getAttribute('data-precio'));
+
+                precioAdicionalAcumulado += precioAgregado;
+
+                // Inyectar el renglón al resumen
+                contenedorLista.innerHTML += `
+          <div class="linea-resumen personalizacion-item">
+            <span>+ Extra: ${nombreAgregado}</span>
+            <span>+$${precioAgregado.toFixed(2)}</span>
+          </div>
+        `;
+            });
+
+            // 3. Calcular matemáticas finales y actualizar la pantalla
+            const granTotal = PRECIO_BASE + precioAdicionalAcumulado;
+            contenedorTotal.innerText = `$${granTotal.toFixed(2)}`;
+        }
+
+        // Ejecutar una vez al cargar la página para que inicie limpio
+        actualizarResumen();
+    </script>
+</body>
+
+</html>
