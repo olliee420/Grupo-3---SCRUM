@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filtro de Pedidos - Administración y Personal</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .contenedor {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h2 {
+            color: #4a2c11;
+            margin-bottom: 20px;
+        }
+
+        /* 📊 BARRA DE FILTROS */
+        .barra-filtros {
+            display: flex;
+            gap: 10px;
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn-filtro {
+            background: #eee;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #555;
+        }
+
+        .btn-filtro:hover {
+            background: #ddd;
+        }
+
+        /* Clases de activación de filtros con sus colores correspondientes */
+        .btn-filtro.activo[data-estado="Todos"] {
+            background: #4a2c11;
+            color: white;
+        }
+
+        .btn-filtro.activo[data-estado="Nuevo"] {
+            background: #e5a93c;
+            color: white;
+        }
+
+        .btn-filtro.activo[data-estado="En Preparacion"] {
+            background: #2980b9;
+            color: white;
+        }
+
+        .btn-filtro.activo[data-estado="Listo"] {
+            background: #27ae60;
+            color: white;
+        }
+
+        /* 📋 TABLA / LISTA DE PEDIDOS */
+        .lista-pedidos {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .pedido-item {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 5px solid #ccc;
+            transition: all 0.3s ease;
+        }
+
+        /* Colores en las tarjetas según el estado */
+        .pedido-item.estado-nuevo {
+            border-left-color: #e5a93c;
+        }
+
+        .pedido-item.estado-preparacion {
+            border-left-color: #2980b9;
+        }
+
+        .pedido-item.estado-listo {
+            border-left-color: #27ae60;
+        }
+
+        .info-principal h4 {
+            margin: 0 0 5px 0;
+            color: #222;
+        }
+
+        .info-principal p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .badge-estado {
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .badge-nuevo {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-preparacion {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .badge-listo {
+            background: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="contenedor">
+        <h2>📋 Gestión e Historial de Pedidos</h2>
+
+        <!-- CONTROLES DE FILTRADO (FRONTEND) -->
+        <div class="barra-filtros">
+            <button class="btn-filtro activo" data-estado="Todos" onclick="filtrarPedidos('Todos', this)">Todos (<span
+                    id="cant-Todos">0</span>)</button>
+            <button class="btn-filtro" data-estado="Nuevo" onclick="filtrarPedidos('Nuevo', this)">Nuevos (<span
+                    id="cant-Nuevo">0</span>)</button>
+            <button class="btn-filtro" data-estado="En Preparacion" onclick="filtrarPedidos('En Preparacion', this)">En
+                Cocina (<span id="cant-En Preparacion">0</span>)</button>
+            <button class="btn-filtro" data-estado="Listo" onclick="filtrarPedidos('Listo', this)">Listos (<span
+                    id="cant-Listo">0</span>)</button>
+        </div>
+
+        <!-- CONTENEDOR DE LA LISTA -->
+        <div class="lista-pedidos" id="panel-lista">
+            <!-- Los datos se inyectan dinámicamente -->
+        </div>
+    </div>
+
+    <!-- ==========================================
+       LOGICA JAVASCRIPT
+       ========================================== */ -->
+    <script>
+        // Datos simulados extraídos de la BD MySQL
+        const pedidosBD = [
+            { referencia: "#CAF-1021", cliente: "Carlos Gómez", productos: "1x Capuccino Grande", total: "$3.25", estado: "Nuevo" },
+            { referencia: "#CAF-1022", cliente: "Laura Merlos", productos: "1x Café Americano", total: "$1.50", estado: "En Preparacion" },
+            { referencia: "#CAF-1023", cliente: "Marta Flores", productos: "2x Croissant de Jamón", total: "$4.00", estado: "Listo" },
+            { referencia: "#CAF-1024", cliente: "Juan Pérez", productos: "1x Té Frío Grande", total: "$2.25", estado: "Nuevo" },
+            { referencia: "#CAF-1025", cliente: "Andrés Solís", productos: "1x Capuccino Mediano", total: "$2.50", estado: "Listo" }
+        ];
+
+        // Función para renderizar la lista completa y contar los estados
+        function inicializarPantalla() {
+            const panel = document.getElementById('panel-lista');
+            panel.innerHTML = '';
+
+            // Contadores iniciales
+            const conteos = { Todos: pedidosBD.length, Nuevo: 0, "En Preparacion": 0, Listo: 0 };
+
+            pedidosBD.forEach(pedido => {
+                // Sumar al contador correspondiente
+                conteos[pedido.estado]++;
+
+                // Definir clases visuales según el estado
+                let claseTarjeta = 'estado-nuevo';
+                let claseBadge = 'badge-nuevo';
+                let textoEstado = 'Nuevo';
+
+                if (pedido.estado === 'En Preparacion') {
+                    claseTarjeta = 'estado-preparacion';
+                    claseBadge = 'badge-preparacion';
+                    textoEstado = 'En Cocina';
+                } else if (pedido.estado === 'Listo') {
+                    claseTarjeta = 'estado-listo';
+                    claseBadge = 'badge-listo';
+                    textoEstado = 'Listo';
+                }
+
+                // Crear elemento HTML
+                panel.innerHTML += `
+          <div class="pedido-item ${claseTarjeta}" data-estado-tarjeta="${pedido.estado}">
+            <div class="info-principal">
+              <h4>${pedido.referencia} — ${pedido.cliente}</h4>
+              <p><strong>Productos:</strong> ${pedido.productos} | <strong>Total:</strong> ${pedido.total}</p>
+            </div>
+            <span class="badge-estado ${claseBadge}">${textoEstado}</span>
+          </div>
+        `;
+            });
+
+            // Actualizar los números de los botones
+            document.getElementById('cant-Todos').innerText = conteos.Todos;
+            document.getElementById('cant-Nuevo').innerText = conteos.Nuevo;
+            document.getElementById('cant-En Preparacion').innerText = conteos["En Preparacion"];
+            document.getElementById('cant-Listo').innerText = conteos.Listo;
+        }
+
+        // 🔥 FUNCIÓN DE FILTRADO DINÁMICO
+        function filtrarPedidos(estadoObjetivo, botonSeleccionado) {
+            // 1. Alternar la clase activa en los botones de la interfaz
+            const botones = document.querySelectorAll('.btn-filtro');
+            botones.forEach(btn => btn.classList.remove('activo'));
+            botonSeleccionado.classList.add('activo');
+
+            // 2. Ocultar o mostrar las tarjetas basándose en el atributo 'data-estado-tarjeta'
+            const tarjetas = document.querySelectorAll('.pedido-item');
+            tarjetas.forEach(tarjeta => {
+                const estadoTarjeta = tarjeta.getAttribute('data-estado-tarjeta');
+
+                if (estadoObjetivo === 'Todos' || estadoTarjeta === estadoObjetivo) {
+                    tarjeta.style.display = 'flex'; // Mostrar
+                } else {
+                    tarjeta.style.display = 'none'; // Ocultar con CSS
+                }
+            });
+        }
+
+        // Inicializar al cargar la página
+        inicializarPantalla();
+    </script>
+</body>
+
+</html>

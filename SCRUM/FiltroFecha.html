@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filtros Avanzados - Historial de Pedidos</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: #f1f5f9;
+            margin: 0;
+            padding: 30px;
+            color: #334155;
+        }
+
+        .contenedor-admin {
+            max-width: 950px;
+            margin: 0 auto;
+        }
+
+        h2 {
+            color: #4a2c11;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        /* 📊 PANEL DE FILTROS AVANZADOS */
+        .panel-busqueda {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 25px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        @media (min-width: 768px) {
+            .panel-busqueda {
+                grid-template-columns: repeat(3, 1fr) auto;
+                align-items: flex-end;
+            }
+        }
+
+        .campo-filtro {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .campo-filtro label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .campo-filtro input,
+        .campo-filtro select {
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            color: #334155;
+            background-color: #fff;
+        }
+
+        .btn-reiniciar {
+            background: #4a2c11;
+            color: white;
+            border: none;
+            padding: 11px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: background 0.2s;
+        }
+
+        .btn-reiniciar:hover {
+            background: #361f0b;
+        }
+
+        /* 📋 TABLA DE RESULTADOS DE AUDITORÍA */
+        .tabla-contenedor {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-weight: 600;
+            padding: 14px 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        td {
+            padding: 14px 20px;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Estados estéticos */
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .badge-nuevo {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .badge-preparacion {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .badge-listo {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .sin-resultados {
+            padding: 30px;
+            text-align: center;
+            color: #94a3b8;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="contenedor-admin">
+        <h2>📊 Historial de Auditoría de Ventas (HU-08)</h2>
+
+        <!-- FORMULARIO DE FILTRADO AVANZADO -->
+        <div class="panel-busqueda">
+            <div class="campo-filtro">
+                <label for="fecha-inicio">Fecha Inicio:</label>
+                <input type="date" id="fecha-inicio" onchange="aplicarFiltrosCombinados()">
+            </div>
+
+            <div class="campo-filtro">
+                <label for="fecha-fin">Fecha Fin:</label>
+                <input type="date" id="fecha-fin" onchange="aplicarFiltrosCombinados()">
+            </div>
+
+            <div class="campo-filtro">
+                <label for="filtro-estado">Estado del Pedido:</label>
+                <select id="filtro-estado" onchange="aplicarFiltrosCombinados()">
+                    <option value="Todos">-- Mostrar Todos --</option>
+                    <option value="Nuevo">Nuevo</option>
+                    <option value="En Preparacion">En Preparación</option>
+                    <option value="Listo">Listo</option>
+                </select>
+            </div>
+
+            <button class="btn-reiniciar" onclick="limpiarFiltros()">Limpiar Filtros</button>
+        </div>
+
+        <!-- TABLA DE CONTROL ADMINISTRATIVO -->
+        <div class="tabla-contenedor">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Referencia</th>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Productos</th>
+                        <th>Estado</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-cuerpo-pedidos">
+                    <!-- Las filas del historial se renderizan aquí -->
+                </tbody>
+            </table>
+            <div id="mensaje-vacio" class="sin-resultados" style="display: none;">
+                No se encontraron pedidos que coincidan con los filtros seleccionados.
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+       LÓGICA JAVASCRIPT AVANZADA
+       ========================================== */ -->
+    <script>
+        // 1. Datos simulados del historial completo extraídos de la BD MySQL
+        // Nota: El formato "YYYY-MM-DD" facilita la comparación lógica de tiempos
+        const pedidosHistorialBD = [
+            { referencia: "#CAF-2001", fecha: "2026-09-01", cliente: "Carlos Gómez", productos: "1x Americano", estado: "Listo", total: "$1.50" },
+            { referencia: "#CAF-2002", fecha: "2026-09-05", cliente: "Laura Merlos", productos: "1x Capuccino Grande", estado: "En Preparacion", total: "$3.25" },
+            { referencia: "#CAF-2003", fecha: "2026-09-09", cliente: "Marta Flores", productos: "2x Croissant", estado: "Listo", total: "$4.00" },
+            { referencia: "#CAF-2004", fecha: "2026-09-11", cliente: "Juan Pérez", productos: "1x Té Frío", estado: "Nuevo", total: "$1.75" },
+            { referencia: "#CAF-2005", fecha: "2026-09-11", cliente: "Andrés Solís", productos: "1x Capuccino Mediano", estado: "Nuevo", total: "$2.50" }
+        ];
+
+        /**
+         * Dibuja inicialmente la tabla al cargar la ventana
+         */
+        function renderizarTabla(lista) {
+            const tbody = document.getElementById('tabla-cuerpo-pedidos');
+            const msgVacio = document.getElementById('mensaje-vacio');
+            tbody.innerHTML = '';
+
+            if (lista.length === 0) {
+                msgVacio.style.display = 'block';
+                return;
+            }
+            msgVacio.style.display = 'none';
+
+            lista.forEach(p => {
+                let claseBadge = "badge-nuevo";
+                if (p.estado === "En Preparacion") claseBadge = "badge-preparacion";
+                if (p.estado === "Listo") claseBadge = "badge-listo";
+
+                tbody.innerHTML += `
+          <tr class="fila-pedido" data-fecha="${p.fecha}" data-estado="${p.estado}">
+            <td><strong>${p.referencia}</strong></td>
+            <td>${p.fecha}</td>
+            <td>${p.cliente}</td>
+            <td>${p.productos}</td>
+            <td><span class="badge ${claseBadge}">${p.estado}</span></td>
+            <td><strong>${p.total}</strong></td>
+          </tr>
+        `;
+            });
+        }
+
+        /**
+         * 🔥 MOTOR DE FILTRADO COMBINADO (Estado + Rango de Fechas)
+         */
+        function aplicarFiltrosCombinados() {
+            // Leer valores seleccionados en los controles HTML
+            const fechaInicioVal = document.getElementById('fecha-inicio').value; // Formato: YYYY-MM-DD o vacío
+            const fechaFinVal = document.getElementById('fecha-fin').value;       // Formato: YYYY-MM-DD o vacío
+            const estadoSeleccionado = document.getElementById('filtro-estado').value;
+
+            // Filtrar el arreglo original usando lógica matemática booleana
+            const registrosFiltrados = pedidosHistorialBD.filter(pedido => {
+
+                // Regla 1: Validar Estado
+                const coincideEstado = (estadoSeleccionado === 'Todos' || pedido.estado === estadoSeleccionado);
+
+                // Regla 2: Validar Rango de Fechas (Si el campo está vacío, se asume verdadero)
+                const coincideFechaInicio = (!fechaInicioVal || pedido.fecha >= fechaInicioVal);
+                const coincideFechaFin = (!fechaFinVal || pedido.fecha <= fechaFinVal);
+
+                // El registro se conserva únicamente si cumple TODOS los criterios al mismo tiempo
+                return coincideEstado && coincideFechaInicio && coincideFechaFin;
+            });
+
+            // Redibujar la tabla exclusivamente con el subconjunto obtenido
+            renderizarTabla(registrosFiltrados);
+        }
+
+        /**
+         * Limpia las entradas y restaura la tabla completa
+         */
+        function limpiarFiltros() {
+            document.getElementById('fecha-inicio').value = '';
+            document.getElementById('fecha-fin').value = '';
+            document.getElementById('filtro-estado').value = 'Todos';
+            renderizarTabla(pedidosHistorialBD);
+        }
+
+        // Inicialización automática de la vista administrativa
+        renderizarTabla(pedidosHistorialBD);
+    </script>
+</body>
+
+</html>

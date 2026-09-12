@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle de Pedido Confirmado</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f7f9fa;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .contenedor-detalle {
+            max-width: 650px;
+            margin: 0 auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Cabecera del pedido */
+        .cabecera-pedido {
+            text-align: center;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+
+        .icono-confirmado {
+            font-size: 3rem;
+            color: #27ae60;
+            margin-bottom: 10px;
+        }
+
+        .referencia {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #4a2c11;
+            background: #f0eae4;
+            padding: 6px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        /* 🔥 Barra de Estado Visual (HU-06) */
+        .barra-estado {
+            display: flex;
+            justify-content: space-between;
+            margin: 25px 0;
+            position: relative;
+        }
+
+        .barra-estado::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 10px;
+            right: 10px;
+            height: 4px;
+            background: #e0e0e0;
+            z-index: 1;
+        }
+
+        .linea-progreso {
+            position: absolute;
+            top: 15px;
+            left: 10px;
+            width: 50%;
+            /* Controla visualmente el avance (0%, 50%, 100%) */
+            height: 4px;
+            background: #27ae60;
+            z-index: 1;
+            transition: width 0.4s ease;
+        }
+
+        .paso {
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            font-size: 0.85rem;
+            color: #888;
+            width: 70px;
+        }
+
+        .paso-circulo {
+            width: 30px;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 5px auto;
+            font-weight: bold;
+            color: white;
+        }
+
+        /* Estados Activos */
+        .paso.activo .paso-circulo {
+            background: #27ae60;
+        }
+
+        .paso.activo {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        /* Cuerpo del desglose */
+        .seccion-titulo {
+            font-size: 1.1rem;
+            color: #4a2c11;
+            margin-bottom: 12px;
+            font-weight: bold;
+        }
+
+        .lista-productos {
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+
+        .producto-fila {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .producto-info {
+            flex: 1;
+        }
+
+        .producto-nombre {
+            font-weight: 600;
+        }
+
+        .producto-extras {
+            font-size: 0.85rem;
+            color: #666;
+            margin: 2px 0 0 15px;
+            list-style-type: "- ";
+            padding: 0;
+        }
+
+        .producto-precio {
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* Bloque de totales e info de entrega */
+        .resumen-financiero {
+            background: #fafafa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .total-fila {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #27ae60;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+
+        .metadatos {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .btn-volver {
+            background-color: #4a2c11;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .btn-volver:hover {
+            background-color: #361f0b;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="contenedor-detalle">
+
+        <!-- CABECERA DE CONFIRMACIÓN -->
+        <div class="cabecera-pedido">
+            <div class="icono-confirmado">🎉</div>
+            <h2>¡Pedido Recibido!</h2>
+            <p>Tu orden ha sido enviada con éxito a la cafetería.</p>
+            <div class="referencia" id="txt-referencia">#CAF-4815</div>
+        </div>
+
+        <!-- 🟢 BARRA DE PROGRESO DE ESTADO (Simula HU-05 y HU-06) -->
+        <div class="barra-estado">
+            <div class="linea-progreso" id="barra-avance"></div>
+
+            <div class="paso activo" id="paso-nuevo">
+                <div class="paso-circulo">1</div>
+                Nuevo
+            </div>
+            <div class="paso" id="paso-preparacion">
+                <div class="paso-circulo">2</div>
+                Cocina
+            </div>
+            <div class="paso" id="paso-listo">
+                <div class="paso-circulo">3</div>
+                Listo
+            </div>
+        </div>
+
+        <!-- DETALLE DE LOS PRODUCTOS Y PERSONALIZACIONES -->
+        <div class="seccion-titulo">Detalle de la Orden</div>
+
+        <div class="lista-productos" id="contenedor-productos">
+            <!-- Los productos de la base de datos se inyectarán aquí -->
+        </div>
+
+        <!-- RESUMEN FINANCIERO Y ENTREGA -->
+        <div class="resumen-financiero">
+            <div class="metadatos">
+                <div><strong>Método de pago:</strong> <span id="txt-pago">Efectivo en Caja</span></div>
+                <div><strong>Fecha y hora:</strong> <span id="txt-fecha">11/09/2026 03:58 PM</span></div>
+            </div>
+
+            <div class="total-fila">
+                <span>Total Pagado:</span>
+                <span id="txt-total">$3.75</span>
+            </div>
+        </div>
+
+        <button class="btn-volver" onclick="location.href='resumen.html'">
+            Hacer otro pedido
+        </button>
+
+    </div>
+
+    <!-- ==========================================
+       JAVASCRIPT: SIMULACIÓN DE DATOS (BACKEND)
+       ========================================== */ -->
+    <script>
+        // 1. Simulación del objeto JSON que devolvería la consulta MySQL de tu Backend
+        const respuestaBaseDatos = {
+            pedido_id: 142,
+            numero_referencia: "#CAF-4815",
+            estado: "En Preparacion", // Puede ser: 'Nuevo', 'En Preparacion', 'Listo'
+            forma_pago: "Efectivo en Caja",
+            fecha: "11/09/2026 03:58 PM",
+            total: 3.75,
+            items: [
+                {
+                    nombre: "Capuccino",
+                    cantidad: 1,
+                    precio_subtotal: 3.75,
+                    personalizaciones: [
+                        "Tamaño: Grande (+$0.75)",
+                        "Agregado: Leche de Almendras (+$0.50)"
+                    ]
+                }
+            ]
+        };
+
+        // 2. Función para pintar los datos en las etiquetas HTML correspondientes
+        function cargarDetallePedido(datos) {
+            // Campos básicos
+            document.getElementById('txt-referencia').innerText = datos.numero_referencia;
+            document.getElementById('txt-pago').innerText = datos.forma_pago;
+            document.getElementById('txt-fecha').innerText = datos.fecha;
+            document.getElementById('txt-total').innerText = `$${datos.total.toFixed(2)}`;
+
+            // Renderizar los productos y sus listas de extras internos
+            const contenedor = document.getElementById('contenedor-productos');
+            contenedor.innerHTML = ''; // Limpiar
+
+            datos.items.forEach(item => {
+                // Crear los elementos de la lista de extras si existen
+                let htmlExtras = '';
+                if (item.personalizaciones && item.personalizaciones.length > 0) {
+                    htmlExtras = `<ul class="producto-extras">`;
+                    item.personalizaciones.forEach(extra => {
+                        htmlExtras += `<li>${extra}</li>`;
+                    });
+                    htmlExtras += `</ul>`;
+                }
+
+                // Estructura de la fila por producto
+                contenedor.innerHTML += `
+          <div class="producto-fila">
+            <div class="producto-info">
+              <span class="producto-nombre">${item.cantidad}x ${item.nombre}</span>
+              ${htmlExtras}
+            </div>
+            <div class="producto-precio">$${item.precio_subtotal.toFixed(2)}</div>
+          </div>
+        `;
+            });
+
+            // 3. Controlar la barra de progreso según el estado real
+            const barra = document.getElementById('barra-avance');
+            const pasoPrep = document.getElementById('paso-preparacion');
+            const pasoListo = document.getElementById('paso-listo');
+
+            if (datos.estado === "Nuevo") {
+                barra.style.width = "0%";
+            } else if (datos.estado === "En Preparacion") {
+                barra.style.width = "50%";
+                pasoPrep.classList.add('activo');
+            } else if (datos.estado === "Listo") {
+                barra.style.width = "100%";
+                pasoPrep.classList.add('activo');
+                pasoListo.classList.add('activo');
+            }
+        }
+
+        // Ejecutar el renderizado al cargar la pantalla
+        cargarDetallePedido(respuestaBaseDatos);
+    </script>
+</body>
+
+</html>

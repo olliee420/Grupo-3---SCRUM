@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seguimiento de Cambios de Estado</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 30px;
+            color: #333;
+        }
+
+        .contenedor-historial {
+            max-width: 550px;
+            margin: 0 auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .info-orden {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-orden h2 {
+            margin: 0;
+            color: #4a2c11;
+        }
+
+        .estado-actual-badge {
+            background-color: #2980b9;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        /* ⏱️ DISEÑO DE LÍNEA DE TIEMPO (TIMELINE) */
+        .linea-tiempo {
+            position: relative;
+            padding-left: 30px;
+            margin-top: 10px;
+        }
+
+        /* Línea vertical de fondo */
+        .linea-tiempo::before {
+            content: '';
+            position: absolute;
+            left: 9px;
+            top: 5px;
+            bottom: 5px;
+            width: 30px;
+            border-left: 2px dashed #cbd5e1;
+        }
+
+        /* Cada hito o evento de cambio */
+        .evento-cambio {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        .evento-cambio:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Círculo indicador */
+        .evento-nodo {
+            position: absolute;
+            left: -30px;
+            top: 4px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #94a3b8;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px #cbd5e1;
+        }
+
+        /* Variación para destacar el cambio más reciente */
+        .evento-cambio.reciente .evento-nodo {
+            background: #27ae60;
+            box-shadow: 0 0 0 2px #a7f3d0;
+        }
+
+        .evento-cuerpo {
+            background: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .evento-cambio.reciente .evento-cuerpo {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+
+        .evento-texto {
+            font-size: 0.95rem;
+            margin: 0 0 4px 0;
+        }
+
+        .evento-texto strong {
+            color: #1e293b;
+        }
+
+        .evento-hora {
+            font-size: 0.8rem;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Panel de simulación */
+        .consola-simulador {
+            margin-top: 25px;
+            background: #1e1e24;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .btn-simular {
+            background: #e5a93c;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-simular:disabled {
+            background: #555;
+            color: #888;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="contenedor-historial">
+        <div class="info-orden">
+            <h2>Orden #CAF-2045</h2>
+            <div class="estado-actual-badge" id="lbl-estado-actual">Nuevo</div>
+        </div>
+
+        <p style="font-weight: bold; color: #475569; margin-bottom: 15px;">⏱️ Historial de actualizaciones:</p>
+
+        <!-- Contenedor donde se insertará la bitácora de horas -->
+        <div class="linea-tiempo" id="contenedor-linea">
+            <!-- Los eventos se cargan dinámicamente aquí -->
+        </div>
+    </div>
+
+    <!-- CONSOLA PARA PRUEBAS (SIMULA LA HU-06 DEL EMPLEADO) -->
+    <div class="consola-simulador" style="max-width: 550px; margin: 20px auto 0 auto;">
+        <button class="btn-simular" id="btn-avanzar" onclick="avanzarEstadoSimulado()">
+            👨‍🍳 Cambiar Estado (Simular Cocina)
+        </button>
+    </div>
+
+    <!-- ==========================================
+       LÓGICA JAVASCRIPT
+       ========================================== */ -->
+    <script>
+        // Arreglo que simula el historial de la tabla `historial_estados`
+        const historialCambios = [
+            { estado: "Nuevo", hora: "04:06:12 PM", detalle: "El pedido fue creado por el cliente en línea." }
+        ];
+
+        // Función encargada de dibujar los renglones del historial en pantalla
+        function actualizarVistaHistorial() {
+            const contenedor = document.getElementById('contenedor-linea');
+            const etiquetaEstado = document.getElementById('lbl-estado-actual');
+
+            contenedor.innerHTML = ''; // Limpiar la lista
+
+            // Invertimos el orden para mostrar el cambio más reciente arriba del todo
+            const copiaHistorial = [...historialCambios].reverse();
+
+            copiaHistorial.forEach((evento, indice) => {
+                // El primer elemento del arreglo invertido es el más reciente
+                const esReciente = indice === 0;
+                const claseReciente = esReciente ? 'reciente' : '';
+
+                // Si es el más reciente, actualizamos el badge principal de la orden
+                if (esReciente) {
+                    etiquetaEstado.innerText = evento.estado;
+                    // Cambiar colores estéticos del badge
+                    if (evento.estado === "En Preparación") etiquetaEstado.style.backgroundColor = "#2980b9";
+                    if (evento.estado === "Listo") etiquetaEstado.style.backgroundColor = "#27ae60";
+                }
+
+                contenedor.innerHTML += `
+          <div class="evento-cambio ${claseReciente}">
+            <div class="evento-nodo"></div>
+            <div class="evento-cuerpo">
+              <p class="evento-texto">Estado cambiado a: <strong>${evento.estado}</strong></p>
+              <div class="evento-hora">
+                🕒 ${evento.hora} — <span style="font-style: italic;">${evento.detalle}</span>
+              </div>
+            </div>
+          </div>
+        `;
+            });
+        }
+
+        // 🔥 SIMULADOR DE ACCIÓN (HU-06)
+        // Agrega marcas de tiempo exactas al flujo del pedido
+        function avanzarEstadoSimulado() {
+            const boton = document.getElementById('btn-avanzar');
+            const horaActual = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            if (historialCambios.length === 1) {
+                historialCambios.push({
+                    estado: "En Preparación",
+                    hora: horaActual,
+                    detalle: "El personal de cocina tomó el pedido."
+                });
+                boton.innerText = "✅ Marcar como Listo";
+                boton.style.backgroundColor = "#27ae60";
+                boton.style.color = "white";
+            }
+            else if (historialCambios.length === 2) {
+                historialCambios.push({
+                    estado: "Listo",
+                    hora: horaActual,
+                    detalle: "Pedido finalizado. Listo para retirar en barra."
+                });
+                boton.innerText = "🎉 Pedido Completado";
+                boton.disabled = true;
+            }
+
+            actualizarVistaHistorial();
+        }
+
+        // Inicializar la pantalla con el estado "Nuevo"
+        actualizarVistaHistorial();
+    </script>
+</body>
+
+</html>
