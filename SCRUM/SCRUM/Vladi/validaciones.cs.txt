@@ -1,0 +1,61 @@
+using Microsoft.AspNetCore.Mvc;
+using MySql.Data.MySqlClient;
+using System.Data;
+
+namespace CafeteriaAPI.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class AuthController : ControllerBase
+    {
+        // Cadena de conexión hacia tu base de datos MySQL
+        private readonly string cadenaConexion = "Server=localhost;Database=cafeteria_pedidos_db;Uid=root;Pwd=tu_password;";
+
+        [HttpPost("login")]
+        public IActionResult Login([FromBody] LoginRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Correo) || string.IsNullOrWhiteSpace(request.Contrasenia))
+            {
+                return BadRequest("Faltan credenciales.");
+            }
+
+            using (MySqlConnection conn = new MySqlConnection(cadenaConexion))
+            {
+                // Se invoca el procedimiento almacenado definido previamente
+                using (MySqlCommand cmd = new MySqlCommand("sp_ValidarAcceso", conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("p_correo", request.Correo);
+                    cmd.Parameters.AddWithValue("p_contrasenia", request.Contrasenia);
+
+                    conn.Open();
+
+                    using (MySqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            var usuarioValido = new 
+                            {
+                                Id = reader["UsuarioId"],
+                                Nombre = reader["NombreUsuario"].ToString(),
+                                Rol = reader["RolNombre"].ToString()
+                            };
+                            
+                            return Ok(usuarioValido); // Retorna los datos y el rol en JSON
+                        }
+                    }
+                }
+            }
+            
+            // Si no se encontraron coincidencias en la base de datos
+            return Unauthorized("Usuario o contraseña incorrectos");
+        }
+    }
+
+    // Modelo para mapear el JSON enviado por Javascript
+    public class LoginRequest
+    {
+        public string Correo { get; set; }
+        public string Contrasenia { get; set; }
+    }
+}

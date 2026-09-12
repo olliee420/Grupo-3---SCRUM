@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú de la Cafetería</title>
+    <style>
+        /* Estilos básicos para que se vea ordenado y responsive (HU-02) */
+        body {
+            font-family: sans-serif;
+            background-color: #f9f9f9;
+            padding: 20px;
+        }
+
+        .menu-contenedor {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .producto {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .producto-nombre {
+            margin: 0 0 10px 0;
+            color: #4a2c11;
+        }
+
+        .producto-precio {
+            font-weight: bold;
+            color: #27ae60;
+            font-size: 1.2em;
+            margin: 0 0 10px 0;
+        }
+
+        .producto-descripcion {
+            color: #666;
+            font-size: 0.95em;
+            line-height: 1.4;
+        }
+
+        .btn-pedido {
+            background-color: #4a2c11;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>☕ Menú del Día</h1>
+
+    <!-- Contenedor principal del menú -->
+    <section class="menu-contenedor">
+
+        <!-- Producto 1 -->
+        <article class="producto">
+            <h3 class="producto-nombre">Café Americano</h3>
+            <p class="producto-precio">$1.50</p>
+            <p class="producto-descripcion">Café expreso diluido en agua caliente, ideal para iniciar la mañana.</p>
+            <button class="btn-pedido">Agregar al pedido</button>
+        </article>
+
+        <!-- Producto 2 -->
+        <article class="producto">
+            <h3 class="producto-nombre">Capuccino</h3>
+            <p class="producto-precio">$2.50</p>
+            <p class="producto-descripcion">Café expreso con leche espumosa y un toque de canela.</p>
+            <button class="btn-pedido">Agregar al pedido</button>
+        </article>
+
+        <!-- Producto 3 -->
+        <article class="producto">
+            <h3 class="producto-nombre">Croissant de Jamón</h3>
+            <p class="producto-precio">$2.00</p>
+            <p class="producto-descripcion">Croissant hojaldrado artesanal relleno de jamón seleccionado y queso
+                derretido.</p>
+            <button class="btn-pedido">Agregar al pedido</button>
+        </article>
+
+    </section>
+
+</body>
+
+</html>
